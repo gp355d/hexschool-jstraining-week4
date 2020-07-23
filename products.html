@@ -12,6 +12,9 @@
 <body>
   <div id="app">
     <div class="container">
+      <button class="btn btn-outline-primary" type="button" @click="signout">
+        登出
+      </button>
       <div class="text-right mt-4">
         <!--使用v-on語法，簡寫@，來綁定執行函式，相當於js的click觸發函式-->
         <button class="btn btn-primary" type="button" @click="openModal('new')">
@@ -264,6 +267,10 @@
             console.log(error); // 若出現錯誤則顯示錯誤訊息
           })
       },
+      signout() {
+          document.cookie = `token=; expires=; path=/`;
+          window.location = '/login.html';
+        },
       openModal: function (isNew, item) {
         const vm = this;
         switch (isNew) {
