@@ -13,6 +13,7 @@
   <div id="app">
     <div class="container">
       <div class="text-right mt-4">
+        <!--使用v-on語法，簡寫@，來綁定執行函式，相當於js的click觸發函式-->
         <button class="btn btn-primary" type="button" @click="openModal('new')">
           建立新的產品
         </button>
@@ -31,35 +32,39 @@
 
         <tbody>
           <tr scope="row" v-for="(item) in products" :key="item.id">
+            <!--從products陣列使用vue的v-for語法跑迴圈依序列出陣列內的物件資料，一定會搭配:key-->
             <td>{{ item.category }}</td>
             <td>{{ item.title }}</td>
             <td>{{ item.origin_price }}</td>
             <td>{{ item.price }}</td>
             <td>
+              <!--使用vue的v-if搭配v-else，來判斷決定顯示文字-->
               <span v-if="item.enabled" class="text-success">啟用</span>
               <span v-else>未啟用</span>
             </td>
             <td>
               <div class="btn-group" role="group" aria-label="Basic example">
+                <!--openModal('識別動作狀態文字',item)，item值代表使用v-for跑prouducts陣列迴圈的物件資料，-->
                 <button type="button" class="btn btn-outline-primary btn-sm" @click="openModal('edit',item)">編輯</button>
-                <button type="button" class="btn btn-outline-danger btn-sm"
-                  @click="openModal('delete',item)">刪除</button>
+                <button type="button" class="btn btn-outline-danger btn-sm" @click="openModal('delete',item)">刪除</button>
               </div>
             </td>
           </tr>
         </tbody>
       </table>
-
+      <!--將分頁元件化-->
+      <pg :pages="paginations" @pgupdate="getproducts"></pg>
+      
     </div>
-
-  </div>
-  <div id="productModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+    <div id="productModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-xl" role="document">
       <div class="modal-content border-0">
         <div class="modal-header bg-dark text-white">
           <h5 id="exampleModalLabel" class="modal-title">
-            <span>新增產品</span>
+             <!--使用vue的v-if搭配v-else，來判斷決定顯示文字-->
+            <span v-if="isNew">新增產品</span>
+            <span v-else>編輯產品</span>
           </h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
@@ -68,12 +73,20 @@
         <div class="modal-body">
           <div class="row">
             <div class="col-sm-4">
-              <div class="form-group">
+              <div class="form-group"  v-for="i in 5" :key="i+'img'">
+                <!--v-for語法跑迴圈依序從0執行到5，i代表索引值-->
                 <label for="imageUrl">輸入圖片網址</label>
-                <input id="imageUrl" type="text" class="form-control" placeholder="請輸入圖片連結" v-model="tmpproducts.imageUrl">
-                {{tmpproducts.imageUrl[1]}}
+                <!--v-model雙向綁定資料，無論是新增、編輯、刪除動作都會將資料存入tmpproducts物件內，所以綁定tmpproducts物件內的資料-->
+                <input id="imageUrl" type="text" class="form-control" placeholder="請輸入圖片連結" v-model="tmpproducts.imageUrl[i-1]">
               </div>
-              <img class="img-fluid" alt >
+              <div class="form-group">
+                <label for="customFile">
+                  或 上傳圖片
+                  <i v-if="status.fileUploading" class="fas fa-spinner fa-spin"></i>
+                </label>
+                <input id="customFile" type="file" class="form-control" @change="uploadFile">
+              </div>
+              <img class="img-fluid" alt :src="tmpproducts.imageUrl[0]">
             </div>
             <div class="col-sm-8">
               <div class="form-group">
@@ -84,39 +97,39 @@
               <div class="form-row">
                 <div class="form-group col-md-6">
                   <label for="category">分類</label>
-                  <input id="category" type="text" class="form-control" placeholder="請輸入分類">
+                  <input id="category" type="text" class="form-control" placeholder="請輸入分類" v-model="tmpproducts.category">
                 </div>
                 <div class="form-group col-md-6">
                   <label for="price">單位</label>
-                  <input id="unit" type="unit" class="form-control" placeholder="請輸入單位">
+                  <input id="unit" type="unit" class="form-control" placeholder="請輸入單位" v-model="tmpproducts.unit">
                 </div>
               </div>
 
               <div class="form-row">
                 <div class="form-group col-md-6">
                   <label for="origin_price">原價</label>
-                  <input id="origin_price" type="number" class="form-control" placeholder="請輸入原價">
+                  <input id="origin_price" type="number" class="form-control" placeholder="請輸入原價" v-model="tmpproducts.origin_price">
                 </div>
                 <div class="form-group col-md-6">
                   <label for="price">售價</label>
-                  <input id="price" type="number" class="form-control" placeholder="請輸入售價">
+                  <input id="price" type="number" class="form-control" placeholder="請輸入售價" v-model="tmpproducts.price"> 
                 </div>
               </div>
               <hr>
 
               <div class="form-group">
                 <label for="description">產品描述</label>
-                <textarea id="description" type="text" class="form-control" placeholder="請輸入產品描述">
+                <textarea id="description" type="text" class="form-control" placeholder="請輸入產品描述" v-model="tmpproducts.description">
             </textarea>
               </div>
               <div class="form-group">
                 <label for="content">說明內容</label>
-                <textarea id="description" type="text" class="form-control" placeholder="請輸入說明內容">
+                <textarea id="description" type="text" class="form-control" placeholder="請輸入說明內容" v-model="tmpproducts.content">
             </textarea>
               </div>
               <div class="form-group">
                 <div class="form-check">
-                  <input id="is_enabled" class="form-check-input" type="checkbox">
+                  <input id="is_enabled" class="form-check-input" type="checkbox" v-model="tmpproducts.enabled">
                   <label class="form-check-label" for="is_enabled">是否啟用</label>
                 </div>
               </div>
@@ -124,43 +137,46 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
+          <button type="button" class="btn btn-outline-secondary" data-dismiss="modal"@click="deleteProduct">
             取消
           </button>
-          <button type="button" class="btn btn-primary" @click="updateproduct">
+          <button type="button" class="btn btn-primary" @click="updateProduct">
             確認
           </button>
         </div>
       </div>
     </div>
   </div>
-  <!-- <div id="delProductModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-     aria-hidden="true">
-     <div class="modal-dialog" role="document">
-       <div class="modal-content border-0">
-         <div class="modal-header bg-danger text-white">
-           <h5 id="exampleModalLabel" class="modal-title">
-             <span>刪除產品</span>
-           </h5>
-           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-             <span aria-hidden="true">&times;</span>
-           </button>
-         </div>
-         <div class="modal-body">
-           是否刪除
-           <strong class="text-danger">{{ tmpproducts.title }}</strong> 商品(刪除後將無法恢復)。
-         </div>
-         <div class="modal-footer">
-           <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
-             取消
-           </button>
-           <button type="button" class="btn btn-danger" @click="delProduct">
-             確認刪除
-           </button>
-         </div>
-       </div>
-     </div>
-   </div> -->
+  <div id="delProductModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content border-0">
+      <div class="modal-header bg-danger text-white">
+        <h5 id="exampleModalLabel" class="modal-title">
+          <span>刪除產品</span>
+        </h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        是否刪除
+        <strong class="text-danger">{{ tmpproducts.title }}</strong> 商品(刪除後將無法恢復)。
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
+          取消
+        </button>
+        <button type="button" class="btn btn-danger" @click="deleteProduct">
+          確認刪除
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+  </div>
+
+
   </div>
 
 </div>
@@ -177,35 +193,72 @@
 
   <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 </body>
+<script type="text/x-template" id="paginationTemplate">
+  <nav aria-label="Page navigation example">
+    <ul class="pagination">
+      <li class="page-item" :class="{'disabled': pages.current_page === 1}">
+        <a class="page-link" href="#" aria-label="Previous" @click.prevent="emitPages(pages.current_page - 1)">
+          <span aria-hidden="true">&laquo;</span>
+        </a>
+      </li>
+      <li v-for="i in pages.total_pages" :key="i" class="page-item" :class="{'active': i === pages.current_page}">
+        <a class="page-link" href="#" @click.prevent="emitPages(i)">{{ i }}</a>
+      </li>
+      <li class="page-item" :class="{'disabled': pages.current_page === pages.total_pages}">
+        <a class="page-link" href="#" aria-label="Next" @click.prevent="emitPages(pages.current_page + 1)">
+          <span aria-hidden="true">&raquo;</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+</script>
 <script>
+  //全域宣告元件方式
+  Vue.component('pg',{
+    template:'#paginationTemplate',
+    data(){
+      return{
+
+      };
+    },
+    props: ['pages'],//主要由外向內接收，<pa :pages="pagination" @pgupdate="getproducts">，接收pagination的物件資料，透過外層:pages的pages由外向內傳入
+    methods: {
+          emitPages(num) { //num是點擊的分頁按鈕，當你點第二頁就會傳入二，點第五頁就會傳入五以此類推
+            this.$emit('pgupdate', num);//透過emit由內向外傳遞我們點擊的分頁並觸發@pgupdate="getproducts"
+          },
+        },
+  });
   new Vue({
     el: '#app',
     data: {
-      products: [],//存放產品資料
-      paginations: {},//存放分頁資訊
-      tmpproducts: {
+      products: [],//存放後端回傳的產品資訊資料
+      paginations: {},//存放後端回傳分頁資訊
+      tmpproducts: {//存放暫存資料，並將imageUrl屬性設定為空陣列
         imageUrl: []
       },//
       apiinfo: {
-        uuid: 'd52eae5f-b113-4dd1-81cc-46bd383ac57a',
-        path: 'https://course-ec-api.hexschool.io/api/',
+        uuid: 'd52eae5f-b113-4dd1-81cc-46bd383ac57a',//user uuid
+        path: 'https://course-ec-api.hexschool.io/api/',//API網址
         token: ''
       },
-      isNew: '',
+      isNew: '',//識別新增還是編輯動作用
+      status: {//上傳狀態識別
+      fileUploading: false,
+    },
 
     },
     methods: {
-      getproducts: function () {
+      getproducts: function (page) {
+        if(!page){//如果page變數為空(undifinde)，將page設定為1(預設值概念)
+          page = 1;
+        }
         const vm = this;
-        const api = `${this.apiinfo.path}${this.apiinfo.uuid}/admin/ec/products`//取得產品API
+        const api = `${this.apiinfo.path}${this.apiinfo.uuid}/admin/ec/products?page=${page}`//取得產品API
         console.log(api);
         axios.get(api).then(function (res) {
           console.log(res)
           vm.products = res.data.data;//將後端回傳的所有產品資料存入至自定義的products陣列內
           vm.paginations = res.data.meta.pagination;//將後端回傳的所有分頁資訊資料存入至自定義的paginations物件內
-          // if(this.tmpproducts.id){
-
-          // }
         })
           .catch(function (error) {
             console.log(error); // 若出現錯誤則顯示錯誤訊息
@@ -215,15 +268,15 @@
         const vm = this;
         switch (isNew) {
           case 'new':
-            this.tmpproducts = {//因為後端回傳imgUrl屬性的資料屬性為陣列格式，所以必須將該屬性設定為空陣列
+            this.tmpproducts = {//因為後端回傳imageUrl屬性的資料屬性為陣列格式，所以必須將該屬性設定為空陣列
               imageUrl: []
             };
-            // this.modal.title = true;//識別是新增還是編輯標題
-            $('#productModal').modal('show');
+            this.isNew = true;//識別是新增(true)還是編輯(false)標題
+            $('#productModal').modal('show');//開啟modal
             break;
           case 'edit':
-            const api = `${this.apiinfo.path}${this.apiinfo.uuid}/admin/ec/product/${item.id}`;
-            // this.modal.title = false;
+            const api = `${this.apiinfo.path}${this.apiinfo.uuid}/admin/ec/product/${item.id}`;//因為取得的資料沒有包含description欄位，所以必須在取得單一資料
+            this.isNew = false;
             axios.get(api).then(function (res) {
               vm.tmpproducts = res.data.data;
               // console.log(vm.tmpproducts)
@@ -233,32 +286,75 @@
             break;
           case 'delete':
             $('#delProductModal').modal('show');
-            this.tempProduct = Object.assign({}, item);
+            this.tmpproducts = Object.assign({}, item);//淺拷貝方式複製
             break;
           default:
             break;
         }
-      }
+      },
+      updateProduct:function(){
+        const vm = this;
+        var httpMethod = 'post';
+        var api = `${this.apiinfo.path}${this.apiinfo.uuid}/admin/ec/product`;
+        if(!this.isNew){//判斷是新增還是編輯動作
+          console.log('patch')
+          api = `${this.apiinfo.path}${this.apiinfo.uuid}/admin/ec/product/${this.tmpproducts.id}`;
+          httpMethod = 'patch';
+          console.log(api)
+        }
+        axios[httpMethod](api, this.tmpproducts).then(function (){
+          $('#productModal').modal('hide');
+          vm.getproducts();//執行完AJAX後再取得產品資料
+        }).catch(function(error){
+          console.log(error)
+        })
+      },
+      deleteProduct:function(){
+        const vm = this;
+        var api = `${this.apiinfo.path}${this.apiinfo.uuid}/admin/ec/product/${this.tmpproducts.id}`//刪除產品API
+        axios.delete(api).then(function(){
+          $('#delProductModal').modal('hide');//刪除成功後關閉Modal
+          vm.getproducts();
+        })
+        .catch(function(error){
+          console.log(error)
+        })
+      },
+      uploadFile:function(){
+      const vm = this;
+      const uploadedFile = document.querySelector('#customFile').files[0];//選取DOM元素中的檔案資訊
+      //轉成Form Data
+      const formData = new FormData();
+      formData.append('file', uploadedFile);
+      const api = `${this.apiinfo.path}${this.apiinfo.uuid}/admin/storage`;//上傳資料API
+      this.status.fileUploading = true;
+      axios.post(api, formData, {//傳送資料時的格式為formdata格式
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }).then(function(res){
+        vm.status.fileUploading = false;
+        if (res.status === 200) {
+          vm.tmpproducts.imageUrl.push(res.data.data.path);
+        }
+      }).catch(function(){
+        console.log('上傳不可超過 2 MB');
+        vm.status.fileUploading = false;
+      });
+      },
     },
-    created() {
+
+    created() {//vue生命週期的created()
       this.apiinfo.token = document.cookie.replace(/(?:(?:^|.*;\s*)logintoken\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+      //從cookie中取得token資料並賦予apiinfo物件內的token屬性的值
       // console.log('this2',this.apiinfo.token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${this.apiinfo.token}`;
+      axios.defaults.headers.common['Authorization'] = `Bearer ${this.apiinfo.token}`;//驗證身分
       this.getproducts();
     }
 
   })
-
-
   
 </script>
-<script>
-// var app = new Vue({
-//   el: '#app2',
-//   data: {
-//     text: '小明',
-//   }
-// })
-</script>
+
 
 </html>
