@@ -268,7 +268,7 @@
           })
       },
       signout() {
-          document.cookie = `token=; expires=; path=/`;
+          document.cookie = `logintoken=; expires=; path=/`;
           window.location = '/login.html';
         },
       openModal: function (isNew, item) {
